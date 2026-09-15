@@ -73,11 +73,11 @@
 
 ## 구현 순서
 
-각 단계는 테스트를 포함하고, `./scripts/check.sh` 통과를 확인한 뒤 멈춘다. 커밋은 사용자가 변경을 검토한 뒤 직접 한다.
+각 단계는 테스트를 포함하고, `./scripts/check.sh` 통과를 확인한 뒤 `develop` 브랜치에 커밋, push하고 멈춘다.
 
 1. (완료) DB 기반: DB 연결 설정, User 모델, Alembic, 테스트 DB 픽스처
 2. (완료) 인증 API: login/logout/me, create-admin CLI
-3. 사용자 CRUD API (`/api/admin/users`)
+3. (완료) 사용자 CRUD API (`/api/admin/users`)
 4. 프론트엔드 기반: Sass, 라우터, 공통 로그인 화면, `role`별 화면 분기, 인증 가드
 5. 관리자 사용자 목록/추가/수정/삭제 화면
 
