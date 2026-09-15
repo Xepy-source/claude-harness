@@ -1,0 +1,10 @@
+@use '../../../shared/styles/variables' as *;
+
+.title {
+  margin-bottom: $space;
+  font-size: 22px;
+}
+
+.description {
+  color: $color-muted;
+}

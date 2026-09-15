@@ -1,0 +1,69 @@
+@use '../../shared/styles/variables' as *;
+
+.page {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: $space * 2;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: $space * 2;
+  width: 100%;
+  max-width: 360px;
+  padding: $space * 4;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius * 1.5;
+}
+
+.title {
+  font-size: 22px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $space * 0.75;
+}
+
+.label {
+  font-weight: 600;
+}
+
+.input {
+  padding: ($space * 1.25) ($space * 1.5);
+  border: 1px solid $color-border;
+  border-radius: $radius;
+
+  &:focus {
+    border-color: $color-primary;
+    outline: 2px solid $color-primary;
+    outline-offset: -1px;
+  }
+}
+
+.error {
+  color: $color-danger;
+}
+
+.submit {
+  padding: $space * 1.25;
+  border: 0;
+  border-radius: $radius;
+  background: $color-primary;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: $color-primary-hover;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}

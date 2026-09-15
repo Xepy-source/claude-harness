@@ -1,24 +1,59 @@
-import { useEffect, useState } from 'react'
-import './App.css'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { UserListPage } from './pages/admin/users/UserListPage'
+import { LoginPage } from './pages/login/LoginPage'
+import { MyPage } from './pages/mypage/MyPage'
+import { AdminLayout } from './shared/components/AdminLayout'
+import { AuthProvider } from './shared/components/AuthProvider'
+import { LoadingScreen } from './shared/components/LoadingScreen'
+import { RequireAuth } from './shared/components/RequireAuth'
+import { homePathFor, useAuth } from './shared/hooks/useAuth'
 
-type Health = 'loading' | 'ok' | 'error'
+/** "/"는 로그인 상태와 role에 맞는 첫 화면으로 보낸다. */
+function HomeRedirect() {
+  const { user, loading } = useAuth()
 
-function App() {
-  const [health, setHealth] = useState<Health>('loading')
+  if (loading) {
+    return <LoadingScreen />
+  }
+  return <Navigate to={user ? homePathFor(user.role) : '/login'} replace />
+}
 
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
-      .then((data: { status: string }) => setHealth(data.status === 'ok' ? 'ok' : 'error'))
-      .catch(() => setHealth('error'))
-  }, [])
-
+/** 전체 라우트. 경로 규칙은 docs/spec.md의 화면 절을 따른다. */
+export function AppRoutes() {
   return (
-    <main>
-      <h1>claude_harness</h1>
-      <p>Backend: {health}</p>
-    </main>
+    <Routes>
+      <Route path="/" element={<HomeRedirect />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/admin"
+        element={
+          <RequireAuth role="admin">
+            <AdminLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<Navigate to="users" replace />} />
+        <Route path="users" element={<UserListPage />} />
+      </Route>
+      <Route
+        path="/mypage"
+        element={
+          <RequireAuth>
+            <MyPage />
+          </RequireAuth>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  )
+}

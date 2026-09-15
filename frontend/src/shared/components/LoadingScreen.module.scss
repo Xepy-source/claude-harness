@@ -1,0 +1,7 @@
+@use '../styles/variables' as *;
+
+.loading {
+  padding: $space * 6;
+  color: $color-muted;
+  text-align: center;
+}

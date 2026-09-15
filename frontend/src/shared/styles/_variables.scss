@@ -1,0 +1,15 @@
+// 공통 Sass 변수. 각 *.module.scss에서 `@use '<상대경로>/shared/styles/variables' as *;`로 쓴다.
+
+$color-bg: #f5f6f8;
+$color-surface: #ffffff;
+$color-text: #1f2328;
+$color-muted: #656d76;
+$color-border: #d0d7de;
+$color-primary: #2f6feb;
+$color-primary-hover: #1f5ad6;
+$color-danger: #cf222e;
+
+$font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', sans-serif;
+
+$space: 8px;
+$radius: 8px;

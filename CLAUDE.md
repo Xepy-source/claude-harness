@@ -32,7 +32,7 @@ React(프론트엔드) + FastAPI(백엔드)로 만드는 웹 서비스. 첫 기�
 
 프론트엔드 (`frontend/`에서):
 
-- 실행: `npm run dev` (포트 3000)
+- 실행: `npm run dev` (포트 3000). 로그인 등 API를 쓰려면 백엔드도 8000 포트에서 실행 중이어야 한다.
 - 테스트: `npm test`
 - 린트: `npm run lint`
 - 빌드(타입 체크 포함): `npm run build`

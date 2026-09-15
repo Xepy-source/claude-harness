@@ -1,0 +1,29 @@
+@use '../../shared/styles/variables' as *;
+
+.page {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: $space * 2;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space * 1.5;
+  width: 100%;
+  max-width: 420px;
+  padding: $space * 4;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius * 1.5;
+}
+
+.title {
+  font-size: 22px;
+}
+
+.description {
+  color: $color-muted;
+}
