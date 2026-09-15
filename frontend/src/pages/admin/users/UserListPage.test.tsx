@@ -18,7 +18,7 @@ const member = makeUser({
 })
 
 function rowOf(name: string) {
-  return screen.getByRole('link', { name }).closest('tr')!
+  return screen.getByRole('button', { name }).closest('tr')!
 }
 
 test('사용자 목록을 번호, 마지막 로그인 시간과 함께 표로 보여준다', async () => {
@@ -28,7 +28,7 @@ test('사용자 목록을 번호, 마지막 로그인 시간과 함께 표로 �
   })
   renderApp('/admin/users')
 
-  await screen.findByRole('link', { name: '김철수' })
+  await screen.findByRole('button', { name: '김철수' })
   const headers = within(screen.getByRole('table')).getAllByRole('columnheader')
   expect(headers.map((th) => th.textContent)).toEqual([
     'No.',
@@ -52,7 +52,7 @@ test('사용자 목록을 번호, 마지막 로그인 시간과 함께 표로 �
   ])
   expect(within(rowOf('관리자')).getAllByRole('cell')[0]).toHaveTextContent('1')
   expect(within(rowOf('관리자')).getAllByRole('cell')[5]).toHaveTextContent('-')
-  expect(screen.getByRole('link', { name: '김철수' })).toHaveAttribute('href', '/admin/users/2')
+  expect(screen.queryByRole('link', { name: '김철수' })).not.toBeInTheDocument()
   expect(screen.getByText('총 2명')).toBeInTheDocument()
 })
 
@@ -79,7 +79,7 @@ test('URL의 검색어와 페이지로 불러오고, 번호는 이전 페이지�
   })
   renderApp('/admin/users?q=kim&page=2')
 
-  await screen.findByRole('link', { name: '김철수' })
+  await screen.findByRole('button', { name: '김철수' })
   expect(within(rowOf('김철수')).getAllByRole('cell')[0]).toHaveTextContent('21')
   expect(screen.getByRole('searchbox', { name: '이메일 또는 이름 검색' })).toHaveValue('kim')
   expect(screen.getByRole('navigation', { name: '페이지' })).toHaveTextContent('2 / 2')
@@ -99,8 +99,37 @@ test('페이지를 넘길 수 있다', async () => {
 
   await userEvent.click(within(pagination).getByRole('button', { name: '다음' }))
 
-  expect(await screen.findByRole('link', { name: '김철수' })).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: '김철수' })).toBeInTheDocument()
   expect(screen.getByRole('navigation', { name: '페이지' })).toHaveTextContent('2 / 3')
+})
+
+test('페이지가 전체 페이지 수를 넘으면 마지막 페이지로 옮긴다', async () => {
+  const fetchMock = mockApi({
+    ...loggedInAsAdmin,
+    [listKey('q=kim&page=3&size=20')]: () => jsonResponse(200, { items: [], total: 21 }),
+    [listKey('q=kim&page=2&size=20')]: () => jsonResponse(200, { items: [member], total: 21 }),
+  })
+  renderApp('/admin/users?q=kim&page=3')
+
+  expect(await screen.findByRole('button', { name: '김철수' })).toBeInTheDocument()
+  expect(screen.getByRole('navigation', { name: '페이지' })).toHaveTextContent('2 / 2')
+  expect(screen.queryByText('사용자가 없습니다.')).not.toBeInTheDocument()
+  expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+    '/api/auth/me',
+    '/api/admin/users?q=kim&page=3&size=20',
+    '/api/admin/users?q=kim&page=2&size=20',
+  ])
+})
+
+test('없어진 수정 화면 주소로 들어오면 목록으로 보낸다', async () => {
+  mockApi({
+    ...loggedInAsAdmin,
+    [listKey('page=1&size=20')]: () => jsonResponse(200, { items: [member], total: 1 }),
+  })
+  renderApp('/admin/users/2')
+
+  expect(await screen.findByRole('heading', { name: '사용자 관리' })).toBeInTheDocument()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
 test('목록을 불러오지 못하면 오류를 보여준다', async () => {

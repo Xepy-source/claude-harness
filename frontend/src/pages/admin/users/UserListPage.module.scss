@@ -86,7 +86,12 @@
   }
 }
 
-.nameLink {
+.nameButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
   color: $color-primary;
   font-weight: 600;
   text-decoration: none;

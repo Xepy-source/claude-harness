@@ -1,15 +1,26 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { USERS_PAGE_SIZE, listUsers } from '../../../shared/api/adminUsers'
-import type { User, UserListResponse } from '../../../shared/api/types'
+import type { UserListResponse } from '../../../shared/api/types'
 import { useApiErrorMessage } from '../../../shared/hooks/useApiError'
 import { UserCreateDialog } from './components/UserCreateDialog'
+import { UserEditDialog } from './components/UserEditDialog'
 import { ROLE_LABELS, formatDate, formatDateTime } from './constants'
 import styles from './UserListPage.module.scss'
 
+/** 지금 열려 있는 팝업 */
+type OpenDialog = { kind: 'create' } | { kind: 'edit'; userId: number } | null
+
+function listParams(q: string, page: number): Record<string, string> {
+  return {
+    ...(q ? { q } : {}),
+    ...(page > 1 ? { page: String(page) } : {}),
+  }
+}
+
 /**
  * 사용자 목록. 검색어와 페이지는 URL(?q=&page=)에 담아 새로고침해도 유지한다.
- * 사용자 추가는 이 화면 위에 뜨는 팝업(UserCreateDialog)으로 한다.
+ * 사용자 추가와 수정은 이 화면 위에 뜨는 팝업(UserCreateDialog, UserEditDialog)으로 한다.
  */
 export function UserListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -21,7 +32,7 @@ export function UserListPage() {
   const [result, setResult] = useState<UserListResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [creating, setCreating] = useState(false)
+  const [dialog, setDialog] = useState<OpenDialog>(null)
   // 값이 바뀌면 같은 검색어와 페이지로 목록을 다시 불러온다.
   const [reloadKey, setReloadKey] = useState(0)
 
@@ -34,9 +45,16 @@ export function UserListPage() {
     setError(null)
     listUsers({ q, page })
       .then((data) => {
-        if (!cancelled) {
-          setResult(data)
+        if (cancelled) {
+          return
         }
+        const lastPage = Math.max(1, Math.ceil(data.total / USERS_PAGE_SIZE))
+        if (page > lastPage) {
+          // 마지막 페이지의 사용자를 모두 지우면 빈 페이지가 되므로 마지막 페이지로 옮긴다.
+          setSearchParams(listParams(q, lastPage), { replace: true })
+          return
+        }
+        setResult(data)
       })
       .catch((err: unknown) => {
         if (!cancelled) {
@@ -46,27 +64,27 @@ export function UserListPage() {
     return () => {
       cancelled = true
     }
-  }, [q, page, reloadKey, toMessage])
+  }, [q, page, reloadKey, toMessage, setSearchParams])
 
-  const closeCreateDialog = useCallback(() => {
-    setCreating(false)
+  const closeDialog = useCallback(() => {
+    setDialog(null)
   }, [])
 
-  const handleCreated = useCallback((user: User) => {
-    setCreating(false)
-    setNotice(`${user.name} 사용자를 추가했습니다.`)
+  const finishDialog = useCallback((message: string) => {
+    setDialog(null)
+    setNotice(message)
     setReloadKey((key) => key + 1)
   }, [])
 
-  function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const next = draft.trim()
+  function openDialog(next: Exclude<OpenDialog, null>) {
     setNotice(null)
-    setSearchParams(next ? { q: next } : {})
+    setDialog(next)
   }
 
-  function goToPage(nextPage: number) {
-    setSearchParams(q ? { q, page: String(nextPage) } : { page: String(nextPage) })
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setNotice(null)
+    setSearchParams(listParams(draft.trim(), 1))
   }
 
   const totalPages = result ? Math.max(1, Math.ceil(result.total / USERS_PAGE_SIZE)) : 1
@@ -79,10 +97,7 @@ export function UserListPage() {
         <button
           type="button"
           className={styles.addButton}
-          onClick={() => {
-            setNotice(null)
-            setCreating(true)
-          }}
+          onClick={() => openDialog({ kind: 'create' })}
         >
           사용자 추가
         </button>
@@ -139,9 +154,13 @@ export function UserListPage() {
                   <tr key={user.id}>
                     <td className={styles.indexColumn}>{firstRowNumber + index}</td>
                     <td>
-                      <Link to={`/admin/users/${user.id}`} className={styles.nameLink}>
+                      <button
+                        type="button"
+                        className={styles.nameButton}
+                        onClick={() => openDialog({ kind: 'edit', userId: user.id })}
+                      >
                         {user.name}
-                      </Link>
+                      </button>
                     </td>
                     <td>{user.email}</td>
                     <td>{ROLE_LABELS[user.role]}</td>
@@ -158,20 +177,41 @@ export function UserListPage() {
             </table>
           )}
           <nav className={styles.pagination} aria-label="페이지">
-            <button type="button" onClick={() => goToPage(page - 1)} disabled={page <= 1}>
+            <button
+              type="button"
+              onClick={() => setSearchParams(listParams(q, page - 1))}
+              disabled={page <= 1}
+            >
               이전
             </button>
             <span>
               {page} / {totalPages}
             </span>
-            <button type="button" onClick={() => goToPage(page + 1)} disabled={page >= totalPages}>
+            <button
+              type="button"
+              onClick={() => setSearchParams(listParams(q, page + 1))}
+              disabled={page >= totalPages}
+            >
               다음
             </button>
           </nav>
         </>
       )}
 
-      {creating && <UserCreateDialog onClose={closeCreateDialog} onCreated={handleCreated} />}
+      {dialog?.kind === 'create' && (
+        <UserCreateDialog
+          onClose={closeDialog}
+          onCreated={(user) => finishDialog(`${user.name} 사용자를 추가했습니다.`)}
+        />
+      )}
+      {dialog?.kind === 'edit' && (
+        <UserEditDialog
+          userId={dialog.userId}
+          onClose={closeDialog}
+          onSaved={(user) => finishDialog(`${user.name} 사용자 정보를 저장했습니다.`)}
+          onDeleted={(user) => finishDialog(`${user.name} 사용자를 삭제했습니다.`)}
+        />
+      )}
     </section>
   )
 }

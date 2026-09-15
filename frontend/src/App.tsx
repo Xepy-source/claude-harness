@@ -1,5 +1,4 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
-import { UserEditPage } from './pages/admin/users/UserEditPage'
 import { UserListPage } from './pages/admin/users/UserListPage'
 import { LoginPage } from './pages/login/LoginPage'
 import { MyPage } from './pages/mypage/MyPage'
@@ -35,7 +34,6 @@ export function AppRoutes() {
       >
         <Route index element={<Navigate to="users" replace />} />
         <Route path="users" element={<UserListPage />} />
-        <Route path="users/:userId" element={<UserEditPage />} />
       </Route>
       <Route
         path="/mypage"

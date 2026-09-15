@@ -1,26 +1,24 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
-import {
-  deleteUser,
-  getUser,
-  updateUser,
-  type UserUpdateInput,
-} from '../../../shared/api/adminUsers'
-import type { Role, User } from '../../../shared/api/types'
-import { useApiErrorMessage } from '../../../shared/hooks/useApiError'
-import { useAuth } from '../../../shared/hooks/useAuth'
-import { FormField } from './components/FormField'
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, ROLE_LABELS, ROLE_OPTIONS } from './constants'
-import styles from './UserEditPage.module.scss'
+import { useEffect, useState, type FormEvent } from 'react'
+import { deleteUser, getUser, updateUser, type UserUpdateInput } from '../../../../shared/api/adminUsers'
+import type { Role, User } from '../../../../shared/api/types'
+import { useApiErrorMessage } from '../../../../shared/hooks/useApiError'
+import { useAuth } from '../../../../shared/hooks/useAuth'
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, ROLE_LABELS, ROLE_OPTIONS } from '../constants'
+import { Dialog } from './Dialog'
+import { FormField } from './FormField'
+import styles from './UserEditDialog.module.scss'
 
-const NOT_FOUND = '사용자를 찾을 수 없습니다.'
+interface UserEditDialogProps {
+  userId: number
+  onClose: () => void
+  /** 저장에 성공하면 저장된 사용자와 함께 호출된다. 팝업을 닫는 것은 부모가 한다. */
+  onSaved: (user: User) => void
+  /** 삭제에 성공하면 지운 사용자와 함께 호출된다. 팝업을 닫는 것은 부모가 한다. */
+  onDeleted: (user: User) => void
+}
 
-/** 사용자 수정과 삭제. 바꾼 항목만 PATCH로 보낸다. */
-export function UserEditPage() {
-  const { userId } = useParams()
-  const id = Number(userId)
-  const invalidId = !Number.isInteger(id) || id < 1
-  const navigate = useNavigate()
+/** 사용자 목록 화면 위에 뜨는 사용자 수정/삭제 팝업. 바꾼 항목만 PATCH로 보낸다. */
+export function UserEditDialog({ userId, onClose, onSaved, onDeleted }: UserEditDialogProps) {
   const { user: me, refresh } = useAuth()
   const toMessage = useApiErrorMessage()
 
@@ -34,23 +32,15 @@ export function UserEditPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
 
-  const fillForm = useCallback((user: User) => {
-    setLoaded(user)
-    setName(user.name)
-    setRole(user.role)
-    setIsActive(user.is_active)
-    setPassword('')
-  }, [])
-
   useEffect(() => {
-    if (invalidId) {
-      return
-    }
     let cancelled = false
-    getUser(id)
+    getUser(userId)
       .then((user) => {
         if (!cancelled) {
-          fillForm(user)
+          setLoaded(user)
+          setName(user.name)
+          setRole(user.role)
+          setIsActive(user.is_active)
         }
       })
       .catch((err: unknown) => {
@@ -61,26 +51,20 @@ export function UserEditPage() {
     return () => {
       cancelled = true
     }
-  }, [id, invalidId, fillForm, toMessage])
+  }, [userId, toMessage])
 
-  const backLink = (
-    <Link to="/admin/users" className={styles.back}>
-      ← 목록으로
-    </Link>
-  )
-
-  if (invalidId || loadError) {
+  if (loadError || !loaded) {
     return (
-      <section className={styles.page}>
-        {backLink}
-        <p role="alert" className={styles.error}>
-          {loadError ?? NOT_FOUND}
-        </p>
-      </section>
+      <Dialog title="사용자 수정" onClose={onClose}>
+        {loadError ? (
+          <p role="alert" className={styles.error}>
+            {loadError}
+          </p>
+        ) : (
+          <p className={styles.muted}>불러오는 중...</p>
+        )}
+      </Dialog>
     )
-  }
-  if (!loaded) {
-    return <p className={styles.muted}>불러오는 중...</p>
   }
 
   const current = loaded
@@ -112,15 +96,14 @@ export function UserEditPage() {
     setNotice(null)
     setPending(true)
     try {
-      fillForm(await updateUser(current.id, changes))
-      setNotice('저장했습니다.')
+      const saved = await updateUser(current.id, changes)
       if (isSelf) {
         // 상단에 보이는 내 이름을 새로 고친다.
         void refresh().catch(() => {})
       }
+      onSaved(saved)
     } catch (err) {
       setError(toMessage(err))
-    } finally {
       setPending(false)
     }
   }
@@ -134,7 +117,7 @@ export function UserEditPage() {
     setPending(true)
     try {
       await deleteUser(current.id)
-      navigate('/admin/users', { replace: true })
+      onDeleted(current)
     } catch (err) {
       setError(toMessage(err))
       setPending(false)
@@ -142,10 +125,7 @@ export function UserEditPage() {
   }
 
   return (
-    <section className={styles.page}>
-      {backLink}
-      <h1 className={styles.title}>사용자 수정</h1>
-
+    <Dialog title="사용자 수정" onClose={onClose}>
       <form className={styles.form} onSubmit={handleSubmit}>
         <FormField label="이메일">
           <input className={styles.input} type="email" value={current.email} readOnly />
@@ -154,6 +134,7 @@ export function UserEditPage() {
           <input
             className={styles.input}
             required
+            autoFocus
             maxLength={100}
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -198,7 +179,7 @@ export function UserEditPage() {
         </FormField>
 
         {isSelf && (
-          <p className={styles.hint}>
+          <p className={styles.muted}>
             자기 자신은 역할과 활성 상태를 바꾸거나 삭제할 수 없습니다.
           </p>
         )}
@@ -214,9 +195,6 @@ export function UserEditPage() {
         )}
 
         <div className={styles.actions}>
-          <button type="submit" className={styles.primary} disabled={pending}>
-            저장
-          </button>
           <button
             type="button"
             className={styles.danger}
@@ -225,8 +203,16 @@ export function UserEditPage() {
           >
             삭제
           </button>
+          <div className={styles.actionGroup}>
+            <button type="button" className={styles.secondary} onClick={onClose}>
+              취소
+            </button>
+            <button type="submit" className={styles.primary} disabled={pending}>
+              {pending ? '처리 중...' : '저장'}
+            </button>
+          </div>
         </div>
       </form>
-    </section>
+    </Dialog>
   )
 }
