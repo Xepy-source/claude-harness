@@ -9,7 +9,7 @@
 - DB: 로컬 PostgreSQL 18 (Postgres.app, `localhost:5432`), SQLModel, Alembic 마이그레이션, psycopg 3
 - 인증: 이메일 + 비밀번호. 비밀번호는 argon2로 해시(pwdlib). JWT를 httpOnly 쿠키로 전달
 - 설정: pydantic-settings로 `backend/.env`에서 읽음
-- 프론트엔드: Tailwind CSS 4, react-router 7
+- 프론트엔드: Sass 1.99.x (CSS Modules), react-router 7
 
 ## 데이터 모델: User
 
@@ -50,14 +50,17 @@
 
 ## 화면
 
-| 경로         | 내용                                                    |
-| ------------ | ------------------------------------------------------- |
-| `/login`     | 로그인 폼. 이미 로그인 상태면 `/users`로 이동           |
-| `/users`     | 사용자 표, 검색, 페이지네이션, 추가 버튼                |
-| `/users/new` | 추가 폼                                                 |
-| `/users/:id` | 수정 폼, 삭제 버튼(확인 후 삭제)                        |
+관리자 화면은 모두 `/admin`으로 시작한다. 이후 다른 영역(예: `/mypage`)이 추가될 수 있다.
 
-로그인하지 않은 상태로 `/login` 외 경로에 들어가면 `/login`으로 보낸다.
+| 경로               | 내용                                                    |
+| ------------------ | ------------------------------------------------------- |
+| `/admin/login`     | 로그인 폼. 이미 로그인 상태면 `/admin/users`로 이동     |
+| `/admin/users`     | 사용자 표, 검색, 페이지네이션, 추가 버튼                |
+| `/admin/users/new` | 추가 폼                                                 |
+| `/admin/users/:id` | 수정 폼, 삭제 버튼(확인 후 삭제)                        |
+
+- `/admin`으로 들어오면 `/admin/users`로 보낸다.
+- 로그인하지 않은 상태로 `/admin/login` 외의 `/admin` 경로에 들어가면 `/admin/login`으로 보낸다.
 
 ## 테스트
 
@@ -72,7 +75,7 @@
 1. DB 기반: DB 연결 설정, User 모델, Alembic, 테스트 DB 픽스처
 2. 인증 API: login/logout/me, create-admin CLI
 3. 사용자 CRUD API
-4. 프론트엔드 기반: Tailwind, 라우터, 로그인 화면, 인증 가드
+4. 프론트엔드 기반: Sass, 라우터, 로그인 화면, 인증 가드
 5. 사용자 목록/추가/수정/삭제 화면
 
 ## 이번 범위에서 제외
