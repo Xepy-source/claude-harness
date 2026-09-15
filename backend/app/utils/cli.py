@@ -1,6 +1,6 @@
 """관리 명령.
 
-사용법: uv run python -m app.cli create-admin --email admin@example.com --name 관리자
+사용법: uv run python -m app.utils.cli create-admin --email admin@example.com --name 관리자
 """
 
 import argparse
@@ -11,19 +11,18 @@ from collections.abc import Callable, Sequence
 from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlmodel import Session
 
-from app.db import engine
-from app.models import UserRole
-from app.users import EmailAlreadyExistsError, create_user
-
-MIN_PASSWORD_LENGTH = 8
+from app.db.db import engine
+from app.db.models import UserRole
+from app.user.user_crud import EmailAlreadyExistsError, create_user
+from app.user.user_schema import PASSWORD_MIN_LENGTH
 
 _email_adapter = TypeAdapter(EmailStr)
 
 
 def prompt_password() -> str:
     password = getpass.getpass("비밀번호: ")
-    if len(password) < MIN_PASSWORD_LENGTH:
-        raise SystemExit(f"비밀번호는 {MIN_PASSWORD_LENGTH}자 이상이어야 합니다.")
+    if len(password) < PASSWORD_MIN_LENGTH:
+        raise SystemExit(f"비밀번호는 {PASSWORD_MIN_LENGTH}자 이상이어야 합니다.")
     if getpass.getpass("비밀번호 확인: ") != password:
         raise SystemExit("비밀번호가 일치하지 않습니다.")
     return password
@@ -35,7 +34,7 @@ def main(
     session_factory: Callable[[], Session] = lambda: Session(engine),
     password_prompt: Callable[[], str] = prompt_password,
 ) -> int:
-    parser = argparse.ArgumentParser(prog="python -m app.cli")
+    parser = argparse.ArgumentParser(prog="python -m app.utils.cli")
     commands = parser.add_subparsers(dest="command", required=True)
     create_admin = commands.add_parser("create-admin", help="관리자 계정을 만든다.")
     create_admin.add_argument("--email", required=True)

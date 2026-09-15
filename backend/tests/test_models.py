@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
-from app.models import User, UserRole
+from app.db.models import User, UserRole
 
 
 def make_user(**overrides: object) -> User:

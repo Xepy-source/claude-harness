@@ -9,13 +9,12 @@ from psycopg import sql
 from sqlalchemy import Engine, make_url, text
 from sqlmodel import Session, SQLModel, create_engine
 
-import app.models  # noqa: F401  모델을 SQLModel.metadata에 등록한다.
 from alembic import command
-from app.config import settings
-from app.db import get_session
+from app.db.db import get_session
+from app.db.models import User, UserRole
 from app.main import app as fastapi_app
-from app.models import User, UserRole
-from app.users import create_user
+from app.user.user_crud import create_user
+from app.utils.config import settings
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 
@@ -95,6 +94,12 @@ def client(session: Session) -> Iterator[TestClient]:
     fastapi_app.dependency_overrides.clear()
 
 
+def login(client: TestClient, email: str, password: str) -> TestClient:
+    response = client.post("/api/auth/login", json={"email": email, "password": password})
+    assert response.status_code == 200, response.text
+    return client
+
+
 @pytest.fixture
 def admin_password() -> str:
     return "admin-password"
@@ -114,8 +119,20 @@ def admin(session: Session, admin_password: str) -> User:
 @pytest.fixture
 def admin_client(client: TestClient, admin: User, admin_password: str) -> TestClient:
     """관리자로 로그인한 클라이언트."""
-    response = client.post(
-        "/api/auth/login", json={"email": admin.email, "password": admin_password}
-    )
-    assert response.status_code == 200, response.text
-    return client
+    return login(client, admin.email, admin_password)
+
+
+@pytest.fixture
+def user_password() -> str:
+    return "user-password"
+
+
+@pytest.fixture
+def user(session: Session, user_password: str) -> User:
+    return create_user(session, email="user@example.com", name="사용자", password=user_password)
+
+
+@pytest.fixture
+def user_client(client: TestClient, user: User, user_password: str) -> TestClient:
+    """일반 사용자로 로그인한 클라이언트."""
+    return login(client, user.email, user_password)

@@ -1,10 +1,10 @@
 import pytest
 from sqlmodel import Session
 
-from app.cli import main
-from app.models import UserRole
-from app.security import verify_password
-from app.users import get_user_by_email
+from app.db.models import UserRole
+from app.user.user_crud import get_user_by_email
+from app.utils.cli import main
+from app.utils.security import verify_password
 
 
 def run_create_admin(session: Session, email: str, name: str = "대표") -> int:

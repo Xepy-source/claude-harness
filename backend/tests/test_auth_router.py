@@ -5,9 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app.models import User, UserRole
-from app.security import create_access_token
-from app.users import create_user
+from app.db.models import User
+from app.utils.security import create_access_token
 
 
 def login(client: TestClient, email: str, password: str) -> httpx.Response:
@@ -30,6 +29,13 @@ def test_login_sets_httponly_cookie_and_returns_admin(
     assert "samesite=lax" in set_cookie.lower()
 
 
+def test_login_allows_normal_user(client: TestClient, user: User, user_password: str) -> None:
+    response = login(client, user.email, user_password)
+
+    assert response.status_code == 200
+    assert response.json()["role"] == "user"
+
+
 def test_login_email_is_case_insensitive(
     client: TestClient, admin: User, admin_password: str
 ) -> None:
@@ -49,20 +55,14 @@ def test_login_rejects_bad_credentials(
     assert "set-cookie" not in response.headers
 
 
-def test_login_rejects_inactive_admin(
-    client: TestClient, session: Session, admin: User, admin_password: str
+def test_login_rejects_inactive_user(
+    client: TestClient, session: Session, user: User, user_password: str
 ) -> None:
-    admin.is_active = False
-    session.add(admin)
+    user.is_active = False
+    session.add(user)
     session.commit()
 
-    assert login(client, admin.email, admin_password).status_code == 401
-
-
-def test_login_rejects_non_admin_user(client: TestClient, session: Session) -> None:
-    create_user(session, email="user@example.com", name="사용자", password="user-password")
-
-    assert login(client, "user@example.com", "user-password").status_code == 401
+    assert login(client, user.email, user_password).status_code == 401
 
 
 def test_me_requires_login(client: TestClient) -> None:
@@ -89,26 +89,25 @@ def test_me_returns_logged_in_admin(admin_client: TestClient, admin: User) -> No
 
     assert response.status_code == 200
     assert response.json()["id"] == admin.id
+    assert response.json()["role"] == "admin"
 
 
-def test_me_rejects_admin_deactivated_after_login(
-    admin_client: TestClient, session: Session, admin: User
+def test_me_returns_logged_in_normal_user(user_client: TestClient, user: User) -> None:
+    response = user_client.get("/api/auth/me")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == user.id
+    assert response.json()["role"] == "user"
+
+
+def test_me_rejects_user_deactivated_after_login(
+    user_client: TestClient, session: Session, user: User
 ) -> None:
-    admin.is_active = False
-    session.add(admin)
+    user.is_active = False
+    session.add(user)
     session.commit()
 
-    assert admin_client.get("/api/auth/me").status_code == 401
-
-
-def test_me_forbids_admin_demoted_after_login(
-    admin_client: TestClient, session: Session, admin: User
-) -> None:
-    admin.role = UserRole.USER
-    session.add(admin)
-    session.commit()
-
-    assert admin_client.get("/api/auth/me").status_code == 403
+    assert user_client.get("/api/auth/me").status_code == 401
 
 
 def test_logout_clears_cookie(admin_client: TestClient) -> None:

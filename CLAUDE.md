@@ -1,13 +1,13 @@
 # claude_harness
 
-React(프론트엔드) + FastAPI(백엔드)로 만드는 웹 서비스. 첫 기능은 관리자가 로그인해서 사용자 계정을 관리하는 관리자 페이지(`/admin`)이며, 프로젝트는 계속 커진다.
+React(프론트엔드) + FastAPI(백엔드)로 만드는 웹 서비스. 첫 기능은 관리자가 로그인해서 사용자 계정을 관리하는 관리자 페이지(`/admin`)이며, 프로젝트는 계속 커진다. 로그인은 관리자와 일반 사용자가 같은 화면과 API를 쓰고, 로그인 후 `role`에 따라 화면이 나뉜다.
 
 기능 작업 전에 [docs/spec.md](docs/spec.md)를 읽는다. 데이터 모델, API, 화면, 구현 순서가 정리되어 있다.
 
 ## 구조
 
 - `backend/`: FastAPI 앱. uv로 관리하며 Python 3.12를 쓴다. 파일 배치와 백엔드 규칙은 [backend/CLAUDE.md](backend/CLAUDE.md)를 따른다.
-  - 모든 API 경로는 `/api`로 시작한다.
+  - 모든 API 경로는 `/api`로 시작하고, 관리자 전용 API는 `/api/admin`으로 시작한다.
   - `alembic/versions/`: DB 마이그레이션
 - `frontend/`: Vite 6 + React 19 + TypeScript + Sass. 파일 배치와 프론트엔드 규칙은 [frontend/CLAUDE.md](frontend/CLAUDE.md)를 따른다.
   - 개발 서버가 `/api` 요청을 `http://localhost:8000`으로 프록시한다.
@@ -25,7 +25,7 @@ React(프론트엔드) + FastAPI(백엔드)로 만드는 웹 서비스. 첫 기�
 - 의존성 추가: `uv add <pkg>` (개발용은 `uv add --dev <pkg>`)
 - 마이그레이션 생성: `uv run alembic revision --autogenerate -m "<설명>"` → 생성된 파일을 읽고 확인한다.
 - 마이그레이션 적용(개발 DB): `uv run alembic upgrade head`
-- 관리자 계정 생성(개발 DB): `uv run python -m app.cli create-admin --email <이메일> --name <이름>` (비밀번호는 프롬프트로 입력)
+- 관리자 계정 생성(개발 DB): `uv run python -m app.utils.cli create-admin --email <이메일> --name <이름>` (비밀번호는 프롬프트로 입력)
 
 테이블 모델을 바꾸면 반드시 마이그레이션도 만든다. 빠뜨리면 `tests/test_migrations.py`가 실패한다. 테스트는 Postgres.app이 실행 중이어야 돌아간다.
 

@@ -2,7 +2,7 @@
 
 ## 목표
 
-관리자가 로그인해서 사용자 계정을 조회, 추가, 수정, 삭제하는 웹 페이지.
+사용자가 로그인하는 웹 서비스의 첫 기능. 관리자는 로그인 후 사용자 계정을 조회, 추가, 수정, 삭제한다.
 
 ## 기술 선택
 
@@ -13,54 +13,57 @@
 
 ## 데이터 모델: User
 
-| 필드            | 타입                | 설명                                 |
-| --------------- | ------------------- | ------------------------------------ |
-| `id`            | int, PK             |                                      |
-| `email`         | str, unique         | 로그인 ID. 소문자로 저장             |
-| `name`          | str                 |                                      |
-| `password_hash` | str                 | API 응답에 절대 포함하지 않음        |
-| `role`          | `admin` \| `user`   |                                      |
-| `is_active`     | bool, 기본 true     | false면 로그인 불가                  |
-| `created_at`    | datetime (UTC)      |                                      |
-| `updated_at`    | datetime (UTC)      |                                      |
+| 필드            | 타입              | 설명                          |
+| --------------- | ----------------- | ----------------------------- |
+| `id`            | int, PK           |                               |
+| `email`         | str, unique       | 로그인 ID. 소문자로 저장      |
+| `name`          | str               |                               |
+| `password_hash` | str               | API 응답에 절대 포함하지 않음 |
+| `role`          | `admin` \| `user` |                               |
+| `is_active`     | bool, 기본 true   | false면 로그인 불가           |
+| `created_at`    | datetime (UTC)    |                               |
+| `updated_at`    | datetime (UTC)    |                               |
 
-## 권한
+## 로그인과 권한
 
-- `role=admin`이고 `is_active=true`인 사용자만 로그인하고 관리 API를 호출할 수 있다.
-- 로그인 실패는 이유(없는 이메일, 틀린 비밀번호, 비활성 계정, 관리자 아님)와 관계없이 같은 메시지의 401로 응답한다. 가입 여부를 추측할 수 없게 하기 위해서다.
-- 로그인 후 계정이 비활성화되면 401, `user`로 변경되면 403으로 응답한다.
+- 관리자(`admin`)와 일반 사용자(`user`)는 같은 로그인 화면(`/login`)과 같은 로그인 API(`POST /api/auth/login`)를 쓴다.
+- `is_active=true`인 사용자만 로그인할 수 있다.
+- 로그인 후 `role`에 따라 화면이 나뉜다. `admin`은 `/admin/users`로 간다. `user`가 갈 화면은 아직 없으며 4단계 전에 정한다.
+- 로그인 실패는 이유(없는 이메일, 틀린 비밀번호, 비활성 계정)와 관계없이 같은 메시지의 401로 응답한다. 가입 여부를 추측할 수 없게 하기 위해서다.
+- `/api/admin`으로 시작하는 API는 `admin`만 호출할 수 있다. 로그인하지 않았으면 401, `admin`이 아니면 403.
+- 로그인 후 계정이 비활성화되면 모든 API에서 401로 응답한다.
 - 로그인 토큰의 유효 시간은 8시간(`JWT_EXPIRE_MINUTES`)이다.
-- 첫 관리자 계정은 CLI로 만든다: `uv run python -m app.cli create-admin --email <이메일> --name <이름>` (비밀번호는 입력 프롬프트로 받는다)
-- 관리자는 자기 자신을 삭제, 비활성화, `user`로 변경할 수 없다. 관리자가 0명이 되는 상황을 막기 위해서다.
+- 첫 관리자 계정은 CLI로 만든다: `uv run python -m app.utils.cli create-admin --email <이메일> --name <이름>` (비밀번호는 입력 프롬프트로 받는다)
+- 관리자는 자기 자신을 삭제, 비활성화, `user`로 변경할 수 없다(400). 관리자가 0명이 되는 상황을 막기 위해서다.
 
 ## API
 
-모든 경로는 `/api`로 시작한다. 로그인 필요는 401, 권한 없음은 403, 없는 리소스는 404, 이메일 중복은 409, 입력 오류는 422.
+모든 경로는 `/api`로 시작하고, 관리자 전용 API는 `/api/admin`으로 시작한다.
+상태 코드: 로그인 필요 401, 권한 없음 403, 없는 리소스 404, 이메일 중복 409, 입력 오류 422, 허용되지 않는 변경(자기 자신 삭제 등) 400.
 
-| 메서드 | 경로               | 설명                                                              |
-| ------ | ------------------ | ----------------------------------------------------------------- |
-| POST   | `/api/auth/login`  | `{email, password}` → 쿠키 설정, 로그인한 사용자 반환             |
-| POST   | `/api/auth/logout` | 쿠키 삭제                                                         |
-| GET    | `/api/auth/me`     | 현재 로그인한 관리자                                              |
-| GET    | `/api/users`       | 목록. `q`(이메일/이름 검색), `page`, `size`(기본 20) → `{items, total}` |
-| POST   | `/api/users`       | 생성 `{email, name, password, role}`                              |
-| GET    | `/api/users/{id}`  | 상세                                                              |
-| PATCH  | `/api/users/{id}`  | 수정 `{name?, role?, is_active?, password?}`                      |
-| DELETE | `/api/users/{id}`  | 삭제                                                              |
+| 메서드 | 경로                    | 설명                                                                                          |
+| ------ | ----------------------- | --------------------------------------------------------------------------------------------- |
+| POST   | `/api/auth/login`       | 모든 활성 사용자. `{email, password}` → 쿠키 설정, 로그인한 사용자(`role` 포함) 반환          |
+| POST   | `/api/auth/logout`      | 쿠키 삭제 → 204                                                                               |
+| GET    | `/api/auth/me`          | 현재 로그인한 사용자(`role` 포함). 프론트엔드가 이 값으로 화면을 나눈다                        |
+| GET    | `/api/admin/users`      | 목록. `q`(이메일/이름 검색), `page`(기본 1), `size`(기본 20, 최대 100) → `{items, total}`, id 순 |
+| POST   | `/api/admin/users`      | 생성 `{email, name, password, role?}` → 201. 비밀번호 8자 이상, `role` 기본 `user`            |
+| GET    | `/api/admin/users/{id}` | 상세                                                                                          |
+| PATCH  | `/api/admin/users/{id}` | 수정 `{name?, role?, is_active?, password?}`. 보내지 않은 필드는 바꾸지 않는다                |
+| DELETE | `/api/admin/users/{id}` | 삭제 → 204                                                                                    |
 
 ## 화면
 
-관리자 화면은 모두 `/admin`으로 시작한다. 이후 다른 영역(예: `/mypage`)이 추가될 수 있다.
-
-| 경로               | 내용                                                    |
-| ------------------ | ------------------------------------------------------- |
-| `/admin/login`     | 로그인 폼. 이미 로그인 상태면 `/admin/users`로 이동     |
-| `/admin/users`     | 사용자 표, 검색, 페이지네이션, 추가 버튼                |
-| `/admin/users/new` | 추가 폼                                                 |
-| `/admin/users/:id` | 수정 폼, 삭제 버튼(확인 후 삭제)                        |
+| 경로               | 내용                                                        |
+| ------------------ | ----------------------------------------------------------- |
+| `/login`           | 공통 로그인 폼. 이미 로그인 상태면 `role`에 맞는 첫 화면으로 이동 |
+| `/admin/users`     | 사용자 표, 검색, 페이지네이션, 추가 버튼                    |
+| `/admin/users/new` | 추가 폼                                                     |
+| `/admin/users/:id` | 수정 폼, 삭제 버튼(확인 후 삭제)                            |
 
 - `/admin`으로 들어오면 `/admin/users`로 보낸다.
-- 로그인하지 않은 상태로 `/admin/login` 외의 `/admin` 경로에 들어가면 `/admin/login`으로 보낸다.
+- 로그인하지 않은 상태로 `/admin` 경로에 들어가면 `/login`으로 보낸다.
+- `user`가 `/admin` 경로에 들어가면 `user`의 첫 화면으로 보낸다(화면은 4단계 전에 정한다).
 
 ## 테스트
 
@@ -72,11 +75,11 @@
 
 각 단계는 테스트를 포함하고, `./scripts/check.sh` 통과를 확인한 뒤 멈춘다. 커밋은 사용자가 변경을 검토한 뒤 직접 한다.
 
-1. DB 기반: DB 연결 설정, User 모델, Alembic, 테스트 DB 픽스처
-2. 인증 API: login/logout/me, create-admin CLI
-3. 사용자 CRUD API
-4. 프론트엔드 기반: Sass, 라우터, 로그인 화면, 인증 가드
-5. 사용자 목록/추가/수정/삭제 화면
+1. (완료) DB 기반: DB 연결 설정, User 모델, Alembic, 테스트 DB 픽스처
+2. (완료) 인증 API: login/logout/me, create-admin CLI
+3. 사용자 CRUD API (`/api/admin/users`)
+4. 프론트엔드 기반: Sass, 라우터, 공통 로그인 화면, `role`별 화면 분기, 인증 가드
+5. 관리자 사용자 목록/추가/수정/삭제 화면
 
 ## 이번 범위에서 제외
 

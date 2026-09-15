@@ -2,7 +2,12 @@ from datetime import UTC, datetime, timedelta
 
 import jwt
 
-from app.security import create_access_token, decode_access_token, hash_password, verify_password
+from app.utils.security import (
+    create_access_token,
+    decode_access_token,
+    hash_password,
+    verify_password,
+)
 
 
 def test_password_hash_roundtrip() -> None:

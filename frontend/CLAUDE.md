@@ -8,12 +8,12 @@
 frontend/src/
   main.tsx, App.tsx       진입점과 라우터 설정
   pages/
+    login/                /login (관리자와 일반 사용자 공통)
+      LoginPage.tsx
+      LoginPage.module.scss
+      LoginPage.test.tsx
+      components/         이 페이지에서만 쓰는 하위 컴포넌트
     admin/                URL이 /admin으로 시작하는 페이지
-      login/              /admin/login
-        LoginPage.tsx
-        LoginPage.module.scss
-        LoginPage.test.tsx
-        components/       이 페이지에서만 쓰는 하위 컴포넌트
       users/              /admin/users, /admin/users/new, /admin/users/:id
         UserListPage.tsx
         UserFormPage.tsx
@@ -34,6 +34,11 @@ frontend/src/
 - 두 페이지 이상에서 쓰는 코드는 `shared/`에 둔다. 한 페이지 폴더의 파일을 다른 페이지 폴더에서 import하지 않는다.
 - 폴더 이름은 소문자, 컴포넌트 파일 이름은 PascalCase로 쓴다. 예: `pages/admin/users/UserListPage.tsx`
 - 테스트는 대상 파일 옆에 `*.test.tsx`로 둔다.
+
+### 라우팅
+
+- 로그인은 `/login` 하나다. 로그인 후 `/api/auth/me`의 `role`에 따라 첫 화면을 나눈다. 자세한 경로 규칙은 `docs/spec.md`의 화면 절을 따른다.
+- 백엔드 API 경로도 화면과 맞춘다. 관리자 화면(`/admin/...`)은 관리자 API(`/api/admin/...`)를 호출한다.
 
 ### 스타일
 

@@ -3,9 +3,9 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
-import app.models  # noqa: F401  모델을 SQLModel.metadata에 등록한다.
+import app.db.models  # noqa: F401  모델을 SQLModel.metadata에 등록한다.
 from alembic import context
-from app.config import settings
+from app.utils.config import settings
 
 config = context.config
 

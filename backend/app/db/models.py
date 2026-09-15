@@ -29,15 +29,3 @@ class User(SQLModel, table=True):
         sa_type=DateTime(timezone=True),
         sa_column_kwargs={"onupdate": utcnow},
     )
-
-
-class UserPublic(SQLModel):
-    """API 응답용 사용자. password_hash를 포함하지 않는다."""
-
-    id: int
-    email: str
-    name: str
-    role: UserRole
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
