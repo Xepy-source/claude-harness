@@ -29,8 +29,14 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 async function readErrorMessage(response: Response): Promise<string> {
   try {
     const body: unknown = await response.json()
-    if (body && typeof body === 'object' && 'detail' in body && typeof body.detail === 'string') {
-      return body.detail
+    if (body && typeof body === 'object' && 'detail' in body) {
+      if (typeof body.detail === 'string') {
+        return body.detail
+      }
+      if (Array.isArray(body.detail)) {
+        // FastAPI 입력 검증 오류(422)
+        return '입력값을 확인하세요.'
+      }
     }
   } catch {
     // JSON이 아닌 오류 응답

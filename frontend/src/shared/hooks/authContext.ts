@@ -8,6 +8,10 @@ export interface AuthState {
   loading: boolean
   login: (email: string, password: string) => Promise<User>
   logout: () => Promise<void>
+  /** /api/auth/me를 다시 불러온다. 자기 정보를 바꾼 뒤 쓴다. */
+  refresh: () => Promise<void>
+  /** 서버 요청 없이 로그아웃 상태로 만든다. 로그인이 만료됐을 때(401) 쓴다. */
+  clearSession: () => void
 }
 
 export const AuthContext = createContext<AuthState | null>(null)

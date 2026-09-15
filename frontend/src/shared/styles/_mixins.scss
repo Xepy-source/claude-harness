@@ -1,0 +1,59 @@
+// 공통 믹스인. `@use '<상대경로>/shared/styles/mixins' as *;`로 쓴다.
+// 믹스인을 쓰는 규칙에서는 자기 속성을 @include보다 먼저 쓴다 (Sass mixed-decls 경고 방지).
+@use 'variables' as *;
+
+@mixin input {
+  padding: ($space * 1.25) ($space * 1.5);
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  background: $color-surface;
+  color: $color-text;
+
+  &:focus {
+    border-color: $color-primary;
+    outline: 2px solid $color-primary;
+    outline-offset: -1px;
+  }
+
+  &:disabled,
+  &[readonly] {
+    background: $color-bg;
+    color: $color-muted;
+  }
+}
+
+@mixin button(
+  $background: $color-surface,
+  $color: $color-text,
+  $border: $color-border,
+  $hover: $color-bg
+) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space ($space * 2);
+  border: 1px solid $border;
+  border-radius: $radius;
+  background: $background;
+  color: $color;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: $hover;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+@mixin button-primary {
+  @include button($color-primary, #fff, $color-primary, $color-primary-hover);
+}
+
+@mixin button-danger {
+  @include button($color-surface, $color-danger, $color-danger, #fff0f0);
+}

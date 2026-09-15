@@ -38,7 +38,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading, login, logout])
+  const refresh = useCallback(async () => {
+    setUser(await authApi.fetchMe())
+  }, [])
+
+  const clearSession = useCallback(() => {
+    setUser(null)
+  }, [])
+
+  const value = useMemo(
+    () => ({ user, loading, login, logout, refresh, clearSession }),
+    [user, loading, login, logout, refresh, clearSession],
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

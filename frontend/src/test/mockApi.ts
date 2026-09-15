@@ -56,3 +56,8 @@ export const normalUser: User = {
   name: '사용자',
   role: 'user',
 }
+
+/** 테스트용 사용자. 필요한 필드만 덮어쓴다. */
+export function makeUser(overrides: Partial<User> = {}): User {
+  return { ...normalUser, ...overrides }
+}

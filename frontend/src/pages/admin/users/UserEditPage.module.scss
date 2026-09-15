@@ -1,0 +1,70 @@
+@use '../../../shared/styles/variables' as *;
+@use '../../../shared/styles/mixins' as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: $space * 2;
+  max-width: 520px;
+}
+
+.back {
+  color: $color-muted;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-text;
+  }
+}
+
+.title {
+  font-size: 22px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space * 2;
+  padding: $space * 3;
+  border: 1px solid $color-border;
+  border-radius: $radius * 1.5;
+  background: $color-surface;
+}
+
+.input {
+  @include input;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: $space;
+  font-weight: 600;
+}
+
+.muted,
+.hint {
+  color: $color-muted;
+}
+
+.error {
+  color: $color-danger;
+}
+
+.notice {
+  color: $color-success;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: $space;
+}
+
+.primary {
+  @include button-primary;
+}
+
+.danger {
+  @include button-danger;
+}

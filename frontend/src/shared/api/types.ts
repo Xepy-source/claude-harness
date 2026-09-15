@@ -10,3 +10,9 @@ export interface User {
   created_at: string
   updated_at: string
 }
+
+/** 백엔드 UserList 응답 */
+export interface UserListResponse {
+  items: User[]
+  total: number
+}

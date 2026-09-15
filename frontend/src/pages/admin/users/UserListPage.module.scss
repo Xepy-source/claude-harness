@@ -1,10 +1,107 @@
 @use '../../../shared/styles/variables' as *;
+@use '../../../shared/styles/mixins' as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: $space * 2;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
 .title {
-  margin-bottom: $space;
   font-size: 22px;
 }
 
-.description {
+.addButton {
+  @include button-primary;
+}
+
+.search {
+  display: flex;
+  gap: $space;
+}
+
+.searchInput {
+  flex: 1;
+  max-width: 360px;
+  @include input;
+}
+
+.searchButton {
+  @include button;
+}
+
+.muted {
   color: $color-muted;
+}
+
+.error {
+  color: $color-danger;
+}
+
+.empty {
+  padding: $space * 4;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  background: $color-surface;
+  color: $color-muted;
+  text-align: center;
+}
+
+.table {
+  width: 100%;
+  border: 1px solid $color-border;
+  border-collapse: collapse;
+  background: $color-surface;
+
+  th,
+  td {
+    padding: ($space * 1.25) ($space * 1.5);
+    border-bottom: 1px solid $color-border;
+    text-align: left;
+  }
+
+  th {
+    background: $color-bg;
+    color: $color-muted;
+    font-weight: 600;
+  }
+
+  tbody tr:hover {
+    background: $color-bg;
+  }
+}
+
+.nameLink {
+  color: $color-primary;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.active {
+  color: $color-success;
+}
+
+.inactive {
+  color: $color-muted;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space * 1.5;
+
+  button {
+    @include button;
+  }
 }
