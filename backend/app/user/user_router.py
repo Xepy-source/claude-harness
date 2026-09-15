@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.auth.auth_router import CurrentAdmin, get_current_admin
 from app.db.db import SessionDep
-from app.db.models import User
+from app.db.models import User, UserRole
 from app.user import user_crud
 from app.user.user_schema import UserCreate, UserList, UserPublic, UserUpdate
 
@@ -27,10 +27,14 @@ def get_user_or_404(session: SessionDep, user_id: int) -> User:
 def list_users(
     session: SessionDep,
     q: str | None = None,
+    role: UserRole | None = None,
+    is_active: bool | None = None,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> dict[str, object]:
-    users, total = user_crud.list_users(session, q=q, page=page, size=size)
+    users, total = user_crud.list_users(
+        session, q=q, role=role, is_active=is_active, page=page, size=size
+    )
     return {"items": users, "total": total}
 
 

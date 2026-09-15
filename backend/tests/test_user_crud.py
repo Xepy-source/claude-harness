@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import pytest
 from sqlmodel import Session
 
@@ -40,14 +42,58 @@ def test_list_users_searches_email_and_name(session: Session) -> None:
     assert [u.email for u in by_name] == ["lee@example.com"]
 
 
-def test_list_users_pages_in_id_order(session: Session) -> None:
+def test_list_users_pages_newest_first(session: Session) -> None:
     for i in range(5):
         make_user(session, f"user{i}@example.com")
 
     users, total = user_crud.list_users(session, page=2, size=2)
 
     assert total == 5
-    assert [u.email for u in users] == ["user2@example.com", "user3@example.com"]
+    assert [u.email for u in users] == ["user2@example.com", "user1@example.com"]
+
+
+def test_list_users_orders_by_created_at_not_id(session: Session) -> None:
+    older = make_user(session, "older@example.com")
+    newer = make_user(session, "newer@example.com")
+    # 나중에 만든 사용자(id가 큰 쪽)의 가입 시각을 과거로 돌린다.
+    newer.created_at = older.created_at - timedelta(days=1)
+    session.add(newer)
+    session.commit()
+
+    users, _ = user_crud.list_users(session)
+
+    assert [u.email for u in users] == ["older@example.com", "newer@example.com"]
+
+
+def test_list_users_breaks_created_at_ties_by_newest_id(session: Session) -> None:
+    first = make_user(session, "first@example.com")
+    second = make_user(session, "second@example.com")
+    second.created_at = first.created_at
+    session.add(second)
+    session.commit()
+
+    users, _ = user_crud.list_users(session)
+
+    assert [u.email for u in users] == ["second@example.com", "first@example.com"]
+
+
+def test_list_users_filters_by_role_and_active(session: Session) -> None:
+    make_user(session, "admin@example.com", name="김관리", role=UserRole.ADMIN)
+    make_user(session, "kim@example.com", name="김회원")
+    inactive = make_user(session, "lee@example.com", name="이회원")
+    inactive.is_active = False
+    session.add(inactive)
+    session.commit()
+
+    admins, admin_total = user_crud.list_users(session, role=UserRole.ADMIN)
+    inactive_users, _ = user_crud.list_users(session, is_active=False)
+    active_members, _ = user_crud.list_users(session, role=UserRole.USER, is_active=True)
+    kim_members, _ = user_crud.list_users(session, q="김", role=UserRole.USER)
+
+    assert (admin_total, [u.email for u in admins]) == (1, ["admin@example.com"])
+    assert [u.email for u in inactive_users] == ["lee@example.com"]
+    assert [u.email for u in active_members] == ["kim@example.com"]
+    assert [u.email for u in kim_members] == ["kim@example.com"]
 
 
 def test_list_users_treats_like_wildcards_literally(session: Session) -> None:

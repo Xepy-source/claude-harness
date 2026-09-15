@@ -60,6 +60,7 @@ frontend/src/
 - 화면 테스트는 `renderApp(path)`로 렌더링한다. 실제 앱과 같은 라우트와 인증 가드를 거친다.
 - API 응답은 `mockApi({ 'GET /api/auth/me': meHandler(adminUser), ... })`로 흉내 낸다. 키에는 쿼리 문자열까지 정확히 쓴다(예: `'GET /api/admin/users?page=1&size=20'`). 등록하지 않은 요청은 에러가 난다.
 - 테스트용 사용자는 `adminUser`, `normalUser`, `makeUser({...})`를 쓴다.
+- 시간이 지나야 일어나는 동작은 `vi.useFakeTimers({ shouldAdvanceTime: true })`와 `userEvent.setup({ advanceTimers: vi.advanceTimersByTime })`를 함께 쓰고, `act(() => { vi.advanceTimersByTime(ms) })`로 시간을 넘긴다. `setup.ts`가 테스트마다 실제 타이머로 되돌린다.
 - `window.confirm` 같은 브라우저 함수는 `vi.spyOn(window, 'confirm').mockReturnValue(true)`로 바꾼다. `setup.ts`가 테스트마다 원래대로 되돌린다.
 - `src/test/structure.test.ts`가 파일 생성 규칙(`.css` 금지, 폴더/파일 이름, 페이지 폴더 간 import 금지, `shared/`의 `pages/` import 금지)을 검사한다.
 

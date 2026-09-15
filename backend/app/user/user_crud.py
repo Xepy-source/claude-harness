@@ -36,9 +36,19 @@ def _escape_like(value: str) -> str:
 
 
 def list_users(
-    session: Session, *, q: str | None = None, page: int = 1, size: int = 20
+    session: Session,
+    *,
+    q: str | None = None,
+    role: UserRole | None = None,
+    is_active: bool | None = None,
+    page: int = 1,
+    size: int = 20,
 ) -> tuple[Sequence[User], int]:
-    """이메일이나 이름에 q가 들어간 사용자를 id 순으로 반환한다. (한 페이지 목록, 전체 개수)"""
+    """조건에 맞는 사용자를 최근 가입자부터 반환한다. (한 페이지 목록, 전체 개수)
+
+    q는 이메일이나 이름에 들어간 글자, role과 is_active는 None이면 거르지 않는다.
+    가입 시각이 같으면 id가 큰(나중에 만든) 사용자가 먼저 온다.
+    """
     statement = select(User)
     if q and q.strip():
         pattern = f"%{_escape_like(q.strip())}%"
@@ -48,10 +58,16 @@ def list_users(
                 col(User.name).ilike(pattern, escape="\\"),
             )
         )
+    if role is not None:
+        statement = statement.where(col(User.role) == role)
+    if is_active is not None:
+        statement = statement.where(col(User.is_active) == is_active)
 
     total = session.exec(select(func.count()).select_from(statement.subquery())).one()
     users = session.exec(
-        statement.order_by(col(User.id)).offset((page - 1) * size).limit(size)
+        statement.order_by(col(User.created_at).desc(), col(User.id).desc())
+        .offset((page - 1) * size)
+        .limit(size)
     ).all()
     return users, total
 

@@ -48,7 +48,8 @@ def test_list_users(admin_client: TestClient, session: Session) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["total"] == 2
-    assert [item["email"] for item in body["items"]] == ["admin@example.com", "member@example.com"]
+    # 최근 가입자부터: admin 픽스처가 먼저 만들어졌다.
+    assert [item["email"] for item in body["items"]] == ["member@example.com", "admin@example.com"]
     assert all("password_hash" not in item for item in body["items"])
 
 
@@ -61,11 +62,31 @@ def test_list_users_search_and_paging(admin_client: TestClient, session: Session
 
     body = response.json()
     assert body["total"] == 3
-    assert [item["email"] for item in body["items"]] == ["kim2@example.com"]
+    assert [item["email"] for item in body["items"]] == ["kim0@example.com"]
 
 
-@pytest.mark.parametrize("params", [{"size": 101}, {"size": 0}, {"page": 0}])
-def test_list_users_validates_paging(admin_client: TestClient, params: dict[str, int]) -> None:
+def test_list_users_filters_by_role_and_active(admin_client: TestClient, session: Session) -> None:
+    make_member(session, email="active@example.com")
+    inactive = make_member(session, email="inactive@example.com")
+    inactive.is_active = False
+    session.add(inactive)
+    session.commit()
+
+    def emails(params: dict[str, str]) -> list[str]:
+        response = admin_client.get(USERS_URL, params=params)
+        assert response.status_code == 200
+        return [item["email"] for item in response.json()["items"]]
+
+    assert emails({"role": "admin"}) == ["admin@example.com"]
+    assert emails({"role": "user"}) == ["inactive@example.com", "active@example.com"]
+    assert emails({"is_active": "false"}) == ["inactive@example.com"]
+    assert emails({"role": "user", "is_active": "true"}) == ["active@example.com"]
+
+
+@pytest.mark.parametrize(
+    "params", [{"size": 101}, {"size": 0}, {"page": 0}, {"role": "owner"}, {"is_active": "maybe"}]
+)
+def test_list_users_validates_query(admin_client: TestClient, params: dict[str, object]) -> None:
     assert admin_client.get(USERS_URL, params=params).status_code == 422
 
 

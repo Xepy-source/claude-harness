@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test } from 'vitest'
 import { adminUser, meHandler, mockApi, normalUser } from './test/mockApi'
@@ -24,7 +24,7 @@ describe('관리자', () => {
       renderApp(path)
 
       expect(await screen.findByRole('heading', { name: '사용자 관리' })).toBeInTheDocument()
-      expect(screen.getByText(adminUser.name)).toBeInTheDocument()
+      expect(within(screen.getByRole('banner')).getByText(adminUser.name)).toBeInTheDocument()
     },
   )
 

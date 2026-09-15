@@ -7,6 +7,10 @@ export const USERS_PAGE_SIZE = 20
 
 export interface UserListQuery {
   q?: string
+  /** 없으면 모든 역할 */
+  role?: Role
+  /** 없으면 활성, 비활성 모두 */
+  isActive?: boolean
   page?: number
   size?: number
 }
@@ -26,11 +30,23 @@ export type UserUpdateInput = Partial<{
   password: string
 }>
 
-/** 요청 URL은 항상 q(있을 때), page, size 순서다. */
-export function listUsers({ q, page = 1, size = USERS_PAGE_SIZE }: UserListQuery = {}) {
+/** 최근 가입자부터 온다. 요청 URL은 항상 q, role, is_active(각각 있을 때), page, size 순서다. */
+export function listUsers({
+  q,
+  role,
+  isActive,
+  page = 1,
+  size = USERS_PAGE_SIZE,
+}: UserListQuery = {}) {
   const params = new URLSearchParams()
   if (q) {
     params.set('q', q)
+  }
+  if (role) {
+    params.set('role', role)
+  }
+  if (isActive !== undefined) {
+    params.set('is_active', String(isActive))
   }
   params.set('page', String(page))
   params.set('size', String(size))

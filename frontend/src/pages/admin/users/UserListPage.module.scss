@@ -21,8 +21,17 @@
   @include button-primary;
 }
 
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space;
+}
+
 .search {
   display: flex;
+  flex: 1;
   gap: $space;
 }
 
@@ -34,6 +43,15 @@
 
 .searchButton {
   @include button;
+}
+
+.filters {
+  display: flex;
+  gap: $space;
+}
+
+.filter {
+  @include input;
 }
 
 .muted {
