@@ -103,6 +103,18 @@ def test_delete_user(session: Session) -> None:
     assert user_crud.get_user(session, member_id) is None
 
 
+def test_record_login_sets_time_without_touching_updated_at(session: Session) -> None:
+    user = make_user(session, "member@example.com")
+    assert user.last_login_at is None
+    updated_before = user.updated_at
+
+    user = user_crud.record_login(session, user)
+
+    assert user.last_login_at is not None
+    assert user.last_login_at.tzinfo is not None
+    assert user.updated_at == updated_before
+
+
 def test_delete_user_blocks_self(session: Session) -> None:
     admin = make_user(session, "admin@example.com", role=UserRole.ADMIN)
 

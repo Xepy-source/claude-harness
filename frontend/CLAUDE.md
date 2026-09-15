@@ -14,12 +14,11 @@ frontend/src/
       LoginPage.test.tsx
       components/         이 페이지에서만 쓰는 하위 컴포넌트
     admin/                URL이 /admin으로 시작하는 페이지
-      users/              /admin/users, /admin/users/new, /admin/users/:id
-        UserListPage.tsx
-        UserCreatePage.tsx
+      users/              /admin/users, /admin/users/:id
+        UserListPage.tsx  목록. 사용자 추가는 이 화면 위의 팝업으로 한다
         UserEditPage.tsx
         constants.ts      이 폴더에서만 쓰는 상수와 작은 함수
-        components/       이 폴더의 페이지들만 쓰는 하위 컴포넌트. 예: FormField.tsx
+        components/       이 폴더의 페이지들만 쓰는 하위 컴포넌트. 예: FormField.tsx, Dialog.tsx, UserCreateDialog.tsx
     mypage/               (예시) URL이 /mypage로 시작하는 페이지
   shared/                 두 페이지 이상이 함께 쓰는 코드
     components/           공통 컴포넌트. 예: 레이아웃, 버튼
@@ -34,6 +33,7 @@ frontend/src/
 - URL의 첫 경로(`/admin`, `/mypage` 등)마다 `pages/` 아래에 폴더를 하나 만든다. 첫 경로가 다른 페이지는 같은 폴더에 두지 않는다.
 - 그 안에서 페이지마다 폴더를 하나 만든다. 같은 리소스를 다루는 페이지(목록, 추가, 수정)는 한 폴더에 둔다.
 - 같은 페이지 폴더 안의 페이지들만 쓰는 하위 컴포넌트는 그 폴더의 `components/`에 둔다.
+- 팝업은 `pages/admin/users/components/Dialog.tsx`를 쓴다(제목 줄을 끌어 이동, Esc/닫기 버튼으로 닫힘). 다른 페이지 폴더에서도 팝업이 필요해지면 `shared/components/`로 옮긴다.
 - 두 페이지 이상에서 쓰는 코드는 `shared/`에 둔다. 한 페이지 폴더의 파일을 다른 페이지 폴더에서 import하지 않는다.
 - 폴더 이름은 소문자, 컴포넌트 파일 이름은 PascalCase로 쓴다. 예: `pages/admin/users/UserListPage.tsx`
 - 테스트는 대상 파일 옆에 `*.test.tsx`로 둔다.

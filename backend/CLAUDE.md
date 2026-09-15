@@ -38,6 +38,10 @@ backend/tests/
 
 위 규칙 중 폴더/파일 배치, 이름, router와 crud의 import는 `tests/test_structure.py`가 검사한다.
 
+### 편집 주의
+
+- `.py` 파일을 고치면 훅이 곧바로 `ruff check --fix`와 `ruff format`을 실행해 쓰지 않는 import를 지운다. 새 import는 그것을 쓰는 코드와 같은 편집에서 추가하거나, 코드를 먼저 넣고 import를 나중에 추가한다.
+
 ## API 규칙
 
 - 관리자 전용 API는 경로를 `/api/admin`으로 시작하고, 라우터에 `dependencies=[Depends(get_current_admin)]`를 걸어 라우터 전체를 막는다. 핸들러에서 요청한 관리자가 필요하면 `CurrentAdmin`을 받는다. 로그인하지 않으면 401, 관리자가 아니면 403인지 테스트한다.

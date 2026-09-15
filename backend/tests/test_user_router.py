@@ -182,3 +182,13 @@ def test_admin_cannot_delete_self(admin_client: TestClient, admin: User) -> None
 
 def test_delete_missing_user(admin_client: TestClient) -> None:
     assert admin_client.delete(f"{USERS_URL}/9999").status_code == 404
+
+
+def test_list_users_includes_last_login_time(admin_client: TestClient, session: Session) -> None:
+    make_member(session)
+
+    items = admin_client.get(USERS_URL).json()["items"]
+
+    last_logins = {item["email"]: item["last_login_at"] for item in items}
+    assert last_logins["admin@example.com"] is not None  # admin_client가 로그인했다
+    assert last_logins["member@example.com"] is None

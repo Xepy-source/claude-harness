@@ -110,6 +110,27 @@ def test_me_rejects_user_deactivated_after_login(
     assert user_client.get("/api/auth/me").status_code == 401
 
 
+def test_login_records_last_login_time(
+    client: TestClient, session: Session, admin: User, admin_password: str
+) -> None:
+    assert admin.last_login_at is None
+
+    response = login(client, admin.email, admin_password)
+
+    assert response.json()["last_login_at"] is not None
+    session.refresh(admin)
+    assert admin.last_login_at is not None
+
+
+def test_failed_login_does_not_record_login_time(
+    client: TestClient, session: Session, admin: User
+) -> None:
+    login(client, admin.email, "wrong-password")
+
+    session.refresh(admin)
+    assert admin.last_login_at is None
+
+
 def test_logout_clears_cookie(admin_client: TestClient) -> None:
     response = admin_client.post("/api/auth/logout")
 

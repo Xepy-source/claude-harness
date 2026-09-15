@@ -58,6 +58,7 @@ def login(body: LoginRequest, session: SessionDep, response: Response) -> User:
     if user is None or not password_ok or not user.is_active:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, LOGIN_FAILED)
 
+    user = user_crud.record_login(session, user)
     response.set_cookie(
         COOKIE_NAME,
         create_access_token(user.id),

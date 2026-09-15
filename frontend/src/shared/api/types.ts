@@ -7,6 +7,8 @@ export interface User {
   name: string
   role: Role
   is_active: boolean
+  /** 로그인한 적이 없으면 null */
+  last_login_at: string | null
   created_at: string
   updated_at: string
 }

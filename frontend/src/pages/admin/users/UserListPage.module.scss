@@ -40,6 +40,10 @@
   color: $color-muted;
 }
 
+.notice {
+  color: $color-success;
+}
+
 .error {
   color: $color-danger;
 }
@@ -70,6 +74,11 @@
     background: $color-bg;
     color: $color-muted;
     font-weight: 600;
+  }
+
+  .indexColumn {
+    width: 64px;
+    color: $color-muted;
   }
 
   tbody tr:hover {

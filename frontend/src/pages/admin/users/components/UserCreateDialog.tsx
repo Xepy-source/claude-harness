@@ -1,15 +1,20 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router'
-import { createUser } from '../../../shared/api/adminUsers'
-import type { Role } from '../../../shared/api/types'
-import { useApiErrorMessage } from '../../../shared/hooks/useApiError'
-import { FormField } from './components/FormField'
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, ROLE_LABELS, ROLE_OPTIONS } from './constants'
-import styles from './UserCreatePage.module.scss'
+import { createUser } from '../../../../shared/api/adminUsers'
+import type { Role, User } from '../../../../shared/api/types'
+import { useApiErrorMessage } from '../../../../shared/hooks/useApiError'
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, ROLE_LABELS, ROLE_OPTIONS } from '../constants'
+import { Dialog } from './Dialog'
+import { FormField } from './FormField'
+import styles from './UserCreateDialog.module.scss'
 
-/** 사용자 추가. 성공하면 목록으로 돌아간다. */
-export function UserCreatePage() {
-  const navigate = useNavigate()
+interface UserCreateDialogProps {
+  onClose: () => void
+  /** 추가에 성공하면 만든 사용자와 함께 호출된다. 팝업을 닫는 것은 부모가 한다. */
+  onCreated: (user: User) => void
+}
+
+/** 사용자 목록 화면 위에 뜨는 사용자 추가 팝업 */
+export function UserCreateDialog({ onClose, onCreated }: UserCreateDialogProps) {
   const toMessage = useApiErrorMessage()
 
   const [email, setEmail] = useState('')
@@ -24,8 +29,7 @@ export function UserCreatePage() {
     setError(null)
     setSubmitting(true)
     try {
-      await createUser({ email, name: name.trim(), password, role })
-      navigate('/admin/users')
+      onCreated(await createUser({ email, name: name.trim(), password, role }))
     } catch (err) {
       setError(toMessage(err))
       setSubmitting(false)
@@ -33,18 +37,14 @@ export function UserCreatePage() {
   }
 
   return (
-    <section className={styles.page}>
-      <Link to="/admin/users" className={styles.back}>
-        ← 목록으로
-      </Link>
-      <h1 className={styles.title}>사용자 추가</h1>
-
+    <Dialog title="사용자 추가" onClose={onClose}>
       <form className={styles.form} onSubmit={handleSubmit}>
         <FormField label="이메일">
           <input
             className={styles.input}
             type="email"
             required
+            autoFocus
             maxLength={255}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
@@ -92,14 +92,14 @@ export function UserCreatePage() {
         )}
 
         <div className={styles.actions}>
+          <button type="button" className={styles.secondary} onClick={onClose}>
+            취소
+          </button>
           <button type="submit" className={styles.primary} disabled={submitting}>
             {submitting ? '추가 중...' : '추가'}
           </button>
-          <Link to="/admin/users" className={styles.secondary}>
-            취소
-          </Link>
         </div>
       </form>
-    </section>
+    </Dialog>
   )
 }

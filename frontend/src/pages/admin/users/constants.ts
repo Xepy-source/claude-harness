@@ -15,3 +15,13 @@ export const PASSWORD_MAX_LENGTH = 128
 export function formatDate(iso: string): string {
   return iso.slice(0, 10)
 }
+
+/** ISO 시각을 사용자 컴퓨터의 시간대 기준 "2026-03-04 09:05"로 바꾼다. */
+export function formatDateTime(iso: string): string {
+  const date = new Date(iso)
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+    `${pad(date.getHours())}:${pad(date.getMinutes())}`
+  )
+}

@@ -12,23 +12,47 @@ const member = makeUser({
   email: 'kim@example.com',
   name: '김철수',
   is_active: false,
+  // 로컬 시각으로 만들어 테스트 환경의 시간대와 관계없이 '2026-03-05 14:30'으로 보인다.
+  last_login_at: new Date(2026, 2, 5, 14, 30).toISOString(),
   created_at: '2026-03-04T10:00:00+09:00',
 })
 
-test('사용자 목록을 표로 보여준다', async () => {
+function rowOf(name: string) {
+  return screen.getByRole('link', { name }).closest('tr')!
+}
+
+test('사용자 목록을 번호, 마지막 로그인 시간과 함께 표로 보여준다', async () => {
   mockApi({
     ...loggedInAsAdmin,
     [listKey('page=1&size=20')]: () => jsonResponse(200, { items: [adminUser, member], total: 2 }),
   })
   renderApp('/admin/users')
 
-  const nameLink = await screen.findByRole('link', { name: '김철수' })
-  const row = nameLink.closest('tr')!
-  expect(nameLink).toHaveAttribute('href', '/admin/users/2')
-  expect(within(row).getByText('kim@example.com')).toBeInTheDocument()
-  expect(within(row).getByText('사용자')).toBeInTheDocument()
-  expect(within(row).getByText('비활성')).toBeInTheDocument()
-  expect(within(row).getByText('2026-03-04')).toBeInTheDocument()
+  await screen.findByRole('link', { name: '김철수' })
+  const headers = within(screen.getByRole('table')).getAllByRole('columnheader')
+  expect(headers.map((th) => th.textContent)).toEqual([
+    'No.',
+    '이름',
+    '이메일',
+    '역할',
+    '상태',
+    '마지막 로그인',
+    '가입일',
+  ])
+
+  const memberCells = within(rowOf('김철수')).getAllByRole('cell').map((td) => td.textContent)
+  expect(memberCells).toEqual([
+    '2',
+    '김철수',
+    'kim@example.com',
+    '사용자',
+    '비활성',
+    '2026-03-05 14:30',
+    '2026-03-04',
+  ])
+  expect(within(rowOf('관리자')).getAllByRole('cell')[0]).toHaveTextContent('1')
+  expect(within(rowOf('관리자')).getAllByRole('cell')[5]).toHaveTextContent('-')
+  expect(screen.getByRole('link', { name: '김철수' })).toHaveAttribute('href', '/admin/users/2')
   expect(screen.getByText('총 2명')).toBeInTheDocument()
 })
 
@@ -48,14 +72,15 @@ test('검색어로 다시 불러오고, 결과가 없으면 안내한다', async
   expect(fetchMock).toHaveBeenCalledWith('/api/admin/users?q=nobody&page=1&size=20', expect.anything())
 })
 
-test('URL의 검색어와 페이지로 목록을 불러온다', async () => {
+test('URL의 검색어와 페이지로 불러오고, 번호는 이전 페이지에서 이어진다', async () => {
   mockApi({
     ...loggedInAsAdmin,
     [listKey('q=kim&page=2&size=20')]: () => jsonResponse(200, { items: [member], total: 21 }),
   })
   renderApp('/admin/users?q=kim&page=2')
 
-  expect(await screen.findByRole('link', { name: '김철수' })).toBeInTheDocument()
+  await screen.findByRole('link', { name: '김철수' })
+  expect(within(rowOf('김철수')).getAllByRole('cell')[0]).toHaveTextContent('21')
   expect(screen.getByRole('searchbox', { name: '이메일 또는 이름 검색' })).toHaveValue('kim')
   expect(screen.getByRole('navigation', { name: '페이지' })).toHaveTextContent('2 / 2')
 })
@@ -98,14 +123,16 @@ test('로그인이 만료됐으면(401) 로그인 화면으로 보낸다', async
   expect(await screen.findByRole('heading', { name: '로그인' })).toBeInTheDocument()
 })
 
-test('사용자 추가 버튼으로 추가 화면에 간다', async () => {
+test('사용자 추가는 다른 화면으로 가지 않고 팝업으로 연다', async () => {
   mockApi({
     ...loggedInAsAdmin,
     [listKey('page=1&size=20')]: () => jsonResponse(200, { items: [adminUser], total: 1 }),
   })
   renderApp('/admin/users')
 
-  await userEvent.click(await screen.findByRole('link', { name: '사용자 추가' }))
+  expect(screen.queryByRole('link', { name: '사용자 추가' })).not.toBeInTheDocument()
+  await userEvent.click(await screen.findByRole('button', { name: '사용자 추가' }))
 
-  expect(await screen.findByRole('heading', { name: '사용자 추가' })).toBeInTheDocument()
+  expect(screen.getByRole('dialog', { name: '사용자 추가' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: '사용자 관리' })).toBeInTheDocument()
 })

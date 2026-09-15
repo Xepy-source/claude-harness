@@ -1,0 +1,30 @@
+@use '../../../../shared/styles/variables' as *;
+@use '../../../../shared/styles/mixins' as *;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space * 2;
+}
+
+.input {
+  @include input;
+}
+
+.error {
+  color: $color-danger;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space;
+}
+
+.primary {
+  @include button-primary;
+}
+
+.secondary {
+  @include button;
+}

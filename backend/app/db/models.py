@@ -23,6 +23,7 @@ class User(SQLModel, table=True):
     password_hash: str = Field(max_length=255)
     role: UserRole = Field(default=UserRole.USER, sa_type=String(20))
     is_active: bool = Field(default=True)
+    last_login_at: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))
     created_at: datetime = Field(default_factory=utcnow, sa_type=DateTime(timezone=True))
     updated_at: datetime = Field(
         default_factory=utcnow,

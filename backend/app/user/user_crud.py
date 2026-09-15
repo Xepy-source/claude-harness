@@ -1,10 +1,10 @@
 from collections.abc import Sequence
 
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, update
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, select
 
-from app.db.models import User, UserRole
+from app.db.models import User, UserRole, utcnow
 from app.utils.security import hash_password
 
 CANNOT_DEMOTE_SELF = "자기 자신은 비활성화하거나 일반 사용자로 바꿀 수 없습니다."
@@ -114,3 +114,15 @@ def delete_user(session: Session, user: User, *, actor: User) -> None:
         raise SelfModificationError(CANNOT_DELETE_SELF)
     session.delete(user)
     session.commit()
+
+
+def record_login(session: Session, user: User) -> User:
+    """로그인 성공 시각을 남긴다. 계정 정보를 바꾼 것이 아니므로 updated_at은 그대로 둔다."""
+    session.exec(
+        update(User)
+        .where(col(User.id) == user.id)
+        .values(last_login_at=utcnow(), updated_at=User.updated_at)
+    )
+    session.commit()
+    session.refresh(user)
+    return user
